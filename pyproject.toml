@@ -3,5 +3,8 @@ name = "hackathon-devsimpacto"
 version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
+    "browser-use>=0.9.1",
+    "google>=3.0.0",
+    "google-genai>=1.46.0",
     "requests>=2.32.5",
 ]
