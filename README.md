@@ -1,46 +1,131 @@
-# Beacon MVP
+# 🔷 Beacon
 
-Beacon is a voice-first browsing assistant designed for blind users. It analyses the current page, explains what matters, presents a numbered action menu, and executes the selected task through an autonomous browser agent. High-risk actions (purchases, submissions, posts) always require confirmation in plain language.
+**Navegador Controlado por Voz para Pessoas Cegas**
 
-## Requirements
-- Python 3.13 (matches the project `pyproject.toml`).
-- Google Chrome running locally (Beacon connects through the `browser-use` CDP client).
-- An `OPENAI_API_KEY` with access to the text and audio models used below.
-- Optional for microphone input: `sounddevice` and `numpy` (`pip install sounddevice numpy`).
-- macOS users get spoken output automatically through `afplay`. On other systems install `ffplay`, `mpg123`, or `sox`'s `play` command for audio playback, otherwise transcripts are printed.
+## Hackathon Devs de Impacto!
 
-## Installation
+---
+
+## 💡 O Problema
+
+Navegar na web é uma tarefa visual por design. Para pessoas cegas, a experiência atual significa:
+- Ouvir cada elemento da página em ordem sequencial
+- Navegar por anúncios, popups e botões sem rótulos
+- Não ter contexto sobre o que a página realmente oferece
+- Dificuldade em identificar ações importantes rapidamente
+
+## 🎯 Nossa Solução: Beacon
+
+Beacon não apenas **lê** páginas web — ele as **compreende**. Transformamos páginas visuais complexas em menus falados simples que tornam a navegação intuitiva e eficiente.
+
+### Como Funciona
+
+1. **Analisa** a página — identifica se é uma loja, artigo, formulário, checkout, etc.
+2. **Resume** informações-chave — apresenta o conteúdo mais importante primeiro
+3. **Simplifica** ações — converte interações complexas em um menu numerado:
+   - "1. Adicionar ao carrinho"
+   - "2. Ler avaliações"
+   - "3. Ver especificações técnicas"
+4. **Age em seu nome** — clica botões, preenche formulários, rola e navega baseado na sua intenção
+5. **Mantém você seguro** — sempre confirma antes de ações de alto risco como pagamentos ou publicações
+
+## 🚀 Instalação Rápida
 
 ```bash
-uv sync  # or: pip install -e .
+# Instalar dependências
+uv sync
+
+# Configurar chaves de API no .env
+
+# Executar Beacon
+uv run main.py
 ```
 
-Ensure the virtual environment is activated (`source .venv/bin/activate` when using `uv`).
+### Flags Úteis
 
-## Running Beacon
+- `--agent-steps` — número máximo de passos do agente por ação (padrão: 8)
+- `--load-wait` — segundos de espera após navegação (padrão: 4.0)
 
-```bash
-python browser-use/main.py --url https://example.com
+## 🎮 Como Usar
+
+### Comandos por Voz ou Teclado
+
+Beacon entende linguagem natural:
+
+- **Navegação**: "Abrir amazon.com" / "Ir para YouTube"
+- **Compreensão**: "O que é esta página?" / "Resumir"
+- **Ações**: "Adicionar ao carrinho" / "Fazer número 2" / "Ler artigo"
+- **Interação**: "Pesquisar fones sem fio" / "Voltar"
+- **Nova página**: "Nova página" → Beacon pedirá a URL
+
+### Segurança em Primeiro Lugar
+
+Beacon **sempre pedirá confirmação** antes de:
+- ✅ Enviar informações de pagamento
+- ✅ Publicar conteúdo
+- ✅ Fazer compras
+- ✅ Deletar qualquer coisa
+- ✅ Enviar mensagens ou emails
+
+## 🏗️ Arquitetura Técnica
+
+```
+browser-use/
+├── main.py     # Ponto de entrada CLI
+├── beacon.py   # Orquestração do aplicativo
+└── tools.py    # Motor de análise de páginas e interface de voz
 ```
 
-Useful flags:
+### Componentes Principais
 
-- `--no-voice` – disable text-to-speech output (text prompts only).
-- `--mic` – enable microphone capture (requires `sounddevice` and `numpy`).
-- `--analysis-model`, `--tts-model`, `--transcription-model` – override default OpenAI models.
-- `--agent-steps` – cap the browser agent iterations per action (defaults to 8).
-- `--load-wait` – seconds to pause after navigation before summarising.
+1. **PageUnderstandingEngine** — Usa GPT-4o-mini para analisar DOM e extrair ações relevantes
+2. **VoiceInterface** — TTS (text-to-speech) e STT (speech-to-text) via OpenAI
+3. **BeaconApp** — Coordena navegação, resumos e delegação de tarefas ao agente
+4. **browser-use Agent** — Executa ações autônomas na página atual
 
-## Workflow
-1. Beacon opens the target page and collects a DOM snapshot through `browser-use`.
-2. `gpt-4o-mini` summarises the page intent, highlights important data, and proposes 3–6 key actions.
-3. Actions are voiced as a numbered menu (`1. Add to cart`, `2. Read reviews`, …).
-4. The user responds by voice or keyboard. Beacon parses numbers, action names, or navigation commands.
-5. Selected actions run through the `browser-use` agent. High-risk actions require explicit confirmation.
-6. Beacon reads back the result and refreshes the summary so the user can continue.
+### Dependências
 
-## Limitations & Next Steps
-- Microphone capture is optional; for production we would add wake-word detection and streaming STT.
-- Presently the agent shares a single session; future iterations could support multi-tab workflows.
-- Safety heuristics rely on model output—additional rule-based checks (e.g. detecting payment forms) would harden confirmations.
-- The accessibility menu is generated from DOM text; integrating landmark roles / ARIA data would further improve prioritisation.
+- `browser-use>=0.9.1` — Automação de navegador com agente
+- `openai>=1.52.0` — API para análise, TTS e STT
+- `sounddevice` + `numpy` — (Opcional) Captura de áudio por microfone
+
+### Requisitos
+
+- Python 3.13+
+- Google Chrome instalado localmente
+- Chave da API OpenAI
+- macOS/Linux com `afplay`/`ffplay` para reprodução de áudio (ou prints apenas)
+
+## 🎨 Princípios de Design
+
+1. **Intenção sobre interação** — Usuários dizem o que querem, não como fazer
+2. **Consciência de contexto** — Cada página é analisada por tipo e propósito
+3. **Hierarquia de informação** — Conteúdo mais importante primeiro
+4. **Segurança por padrão** — Confirmação para qualquer ação arriscada
+5. **Comunicação natural** — Fale naturalmente, Beacon entende
+
+## � Impacto Esperado
+
+- **Redução de tempo** para completar tarefas comuns na web
+- **Aumento de autonomia** para usuários cegos em compras, leitura e formulários online
+- **Experiência mais digna** — sem precisar ouvir todo o "ruído" visual de uma página
+
+## 🛠️ Melhorias Futuras
+
+- Detecção por palavra de ativação (wake-word)
+- STT em streaming para respostas mais rápidas
+- Suporte multi-abas
+- Verificações de segurança baseadas em regras (detecção de formulários de pagamento)
+- Integração com dados ARIA e landmarks para priorização ainda melhor
+
+## 👥 Equipe
+
+Desenvolvido para o **Hackathon Devs de Impacto** por [seu nome/equipe].
+
+## 📄 Licença
+
+[Adicione sua licença aqui]
+
+---
+
+**Beacon** — Porque a web deve ser acessível para todos. 🌟
