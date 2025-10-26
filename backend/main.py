@@ -33,6 +33,46 @@ client = openai.OpenAI()
 class DescribePageResponse(BaseModel):
     description: str
 
+# FUNCTIONS AND HELPERS
+
+async def transcribe(audio_file: UploadFile = File(...)):
+    try:
+        audio_data = await audio_file.read()
+        audio_stream = io.BytesIO(audio_data)
+        audio_stream.name = "audio.mpeg"
+
+        transcription = client.audio.transcriptions.create(
+            file=audio_stream,
+            model="whisper-1",
+            response_format="text",
+            language="pt"
+        )
+
+        return transcription
+
+    except openai.APIError as e:
+        raise HTTPException(status_code=502, detail=f"Erro na API da OpenAI: {e.message}")
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Erro ao ler o arquivo de áudio: {str(e)}")
+    
+async def text_to_speech(text_input: str):
+    try:
+        response = client.audio.speech.create(
+            model="tts-1",
+            voice="fable",
+            input=text_input,
+            response_format="mp3"
+        )
+
+        return response.content
+
+    except openai.APIError as e:
+        raise HTTPException(status_code=502, detail=f"Erro na API da OpenAI: {e.message}")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro na síntese de voz: {str(e)}")
+
 # ENDPOINTS
 @app.get("/")
 def health_check():
@@ -41,12 +81,15 @@ def health_check():
 
 @app.post("/describe/")
 async def handle_describe_page(
-    user_query: str = Form(...),
+    audio_file: UploadFile = File(...),
     image_file: UploadFile = File(...),    
 ):
     try:
         file = image_file.file.read()
         base64_image = base64.b64encode(file).decode('utf-8')
+
+        user_query = await transcribe(audio_file)
+        #user_query = "O que há nesta página?"
 
         response = client.responses.create(
             model="gpt-4o",
@@ -66,9 +109,9 @@ async def handle_describe_page(
             ]
         )
 
-        return DescribePageResponse(
-            description=response.output_text
-        )
+        audio_bytes = await text_to_speech(response.output_text)
+
+        return StreamingResponse(io.BytesIO(audio_bytes), media_type="audio/mp3")
     
     except openai.APIError as e:
         print(f"Erro na API da OpenAI: {e}")
