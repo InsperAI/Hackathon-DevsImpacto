@@ -59,7 +59,7 @@ async def handle_describe_page(
                       "text": str(user_query),
                      },
                      {"type": "input_image",
-                      "image_url": f"data:image/png;base64,{base64_image}",
+                      "image_url": f"data:{image_file.content_type};base64,{base64_image}",
                      }
                  ]
                 }
